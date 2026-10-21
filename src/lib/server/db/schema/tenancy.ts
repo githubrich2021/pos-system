@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgTable, primaryKey, text, timestamp, uuid, index } from 'drizzle-orm/pg-core';
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid, index } from 'drizzle-orm/pg-core';
 import { id, timestamps } from './_shared';
 
 /** A business that subscribes to the POS. Every other table points back here. */
@@ -15,6 +15,9 @@ export const tenants = pgTable('tenants', {
 	taxId: text('tax_id'),
 	plan: text('plan').notNull().default('trial'),
 	trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+	/** Receipt counter for sales made in a browser that is not registered as a till. */
+	receiptCounter: integer('receipt_counter').notNull().default(0),
+	receiptFooter: text('receipt_footer'),
 	...timestamps
 });
 

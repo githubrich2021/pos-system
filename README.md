@@ -40,6 +40,22 @@ Open http://localhost:5173.
 To try PIN login: sign in as the owner → **Settings → This device → Set up as till** →
 **Lock till** in the sidebar.
 
+### Making a sale
+
+1. Go to **Sell**. The first time, you'll be asked to **open a shift** — enter the cash in the drawer.
+2. Scan a barcode (or type and press Enter), or tap a product. Use + / − or type a quantity
+   (decimals like 1.5 work for kg and litre items).
+3. Optional: **%** gives a discount (an amount like `5`, or `10%`) — managers and owners only.
+   **⏸** puts the sale on hold so you can serve the next customer; resume it from **Held**.
+4. **Pay** → choose Cash, Mobile money, Card or Bank. You can split one sale across several methods.
+   For cash, tap a note button (GH₵50, GH₵100…) and the change is worked out for you.
+5. **Complete sale** → print the receipt or start a new sale.
+6. At the end of the day, open **Shift → Close shift**, count the drawer, and see if it's over or short.
+
+Keyboard: **F2** jumps to the search box, **F9** opens payment, **Esc** closes the payment window.
+
+Managers can **void** a sale from **Sales → open the receipt → Void**. Stock goes back automatically.
+
 ## 2. Commands
 
 | Command | What it does |
@@ -61,18 +77,21 @@ src/
 │  ├─ core/                   Shared by every business type
 │  │  ├─ modules.ts           The PosModule contract every module follows
 │  │  ├─ permissions.ts       Permission keys + default roles
-│  │  └─ money.ts             Money helpers (amounts stored in pesewas)
+│  │  ├─ money.ts             Money helpers (amounts stored in pesewas)
+│  │  └─ pricing.ts           Sale totals, VAT, discounts, payment checks (till + server)
 │  ├─ modules/                One folder per business type
 │  │  ├─ index.ts             The registry — add new modules here
 │  │  ├─ retail/  restaurant/  pharmacy/  salon/
 │  ├─ server/
 │  │  ├─ db/schema/           Database tables (tenancy, people, catalog, sales, system)
 │  │  ├─ auth/                Passwords/PINs (scrypt), sessions, permission guards
-│  │  └─ services/            Business logic (sign-up, audit log)
+│  │  └─ services/            Business logic (sign-up, sales, shifts, audit log)
 │  └─ components/
 └─ routes/
    ├─ (auth)/                 login, register, pin
-   └─ (app)/                  dashboard, products, sell, settings, module pages
+   ├─ (app)/                  dashboard, sell, sales, shift, products, settings, module pages
+   ├─ (print)/receipt/[id]    Printable receipt (no sidebar)
+   └─ api/sales               The till posts finished sales here
 ```
 
 ### Key design rules
@@ -93,7 +112,9 @@ src/
 
 Its sidebar links, permissions and product fields appear automatically.
 
-## 4. What's built (Phase 1 foundation)
+## 4. What's built
+
+### Foundation
 
 - [x] Business sign-up (30-day trial) with chosen modules
 - [x] Email/password login, till PIN login, lock till, sign out
@@ -104,10 +125,24 @@ Its sidebar links, permissions and product fields appear automatically.
 - [x] Dashboard with setup checklist
 - [x] Full database schema for sales, payments, shifts, expenses, batches, audit
 
+### Sales (Phase 1 continued)
+
+- [x] Sales screen: barcode scanning, search, categories, cart, quantities, weighed items
+- [x] Discounts (amount or %), hold and resume sales
+- [x] Cash, mobile money, card and bank payments, split payments, change calculation
+- [x] Prices and totals recalculated on the server, never trusted from the till
+- [x] Each sale has its own ID, so a double click or retry never saves it twice
+- [x] Receipt numbers per till (T1-000001) or per business (W-000001)
+- [x] Stock deducted on sale and returned on void
+- [x] Printable 80mm receipts
+- [x] Shifts: open with a float, close with a cash count, over/short report
+- [x] Sales history by day (cashiers see only their own sales); voids with a reason
+
 ## 5. Next steps
 
-- [ ] Sales screen (cart, cash/MoMo/card payments, receipts)
-- [ ] Shifts (open/close with cash count)
+- [ ] Customers and credit ("pay later") sales
+- [ ] Partial refunds and returns
+- [ ] Stock adjustments, purchases from suppliers, stock take
 - [ ] Offline mode (service worker + local database + sync queue)
 - [ ] Desktop app (Tauri) with receipt printer support
 - [ ] Reports

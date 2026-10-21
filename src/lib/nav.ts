@@ -1,10 +1,11 @@
-import { LayoutDashboard, Package, Settings } from '@lucide/svelte';
+import { LayoutDashboard, Package, ReceiptText, Settings } from '@lucide/svelte';
 import type { NavItem } from './core/modules';
 import { can } from './core/permissions';
 import { enabledModules } from './modules';
 
 const CORE_TOP: NavItem[] = [
 	{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+	{ label: 'Sales', href: '/sales', icon: ReceiptText, permission: 'sales.create' },
 	{ label: 'Products', href: '/products', icon: Package, permission: 'products.view' }
 ];
 

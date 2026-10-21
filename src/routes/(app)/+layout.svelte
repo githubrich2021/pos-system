@@ -9,6 +9,8 @@
 	let open = $state(false);
 
 	const nav = $derived(buildNav(data.user.modules, data.user.permissions));
+	// The till screen uses the full width and height of the window
+	const wide = $derived(page.url.pathname === '/sell');
 	const isActive = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
 
@@ -28,10 +30,10 @@
 	{/each}
 {/snippet}
 
-<div class="min-h-screen lg:pl-64">
+<div class="min-h-screen lg:pl-64 print:pl-0">
 	<!-- Sidebar -->
 	<aside
-		class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-ink px-3 py-5 transition-transform lg:translate-x-0 {open
+		class="fixed inset-y-0 left-0 z-40 flex w-64 print:hidden flex-col bg-ink px-3 py-5 transition-transform lg:translate-x-0 {open
 			? 'translate-x-0'
 			: '-translate-x-full'}"
 	>
@@ -75,12 +77,12 @@
 	{/if}
 
 	<!-- Mobile top bar -->
-	<header class="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-white px-4 py-3 lg:hidden">
+	<header class="sticky top-0 z-20 flex print:hidden items-center gap-3 border-b border-line bg-white px-4 py-3 lg:hidden">
 		<button onclick={() => (open = true)} aria-label="Open menu"><Menu size={22} /></button>
 		<span class="font-semibold">{data.user.tenantName}</span>
 	</header>
 
-	<main class="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
+	<main class={wide ? 'px-4 py-4 sm:px-6 lg:py-6' : 'mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10'}>
 		{@render children()}
 	</main>
 </div>

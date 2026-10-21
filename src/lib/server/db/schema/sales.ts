@@ -23,10 +23,11 @@ export const shifts = pgTable(
 		countedCash: integer('counted_cash'),
 		/** What the system expected in the drawer at close. Difference = over/short. */
 		expectedCash: integer('expected_cash'),
+		closingNote: text('closing_note'),
 		openedAt: timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
 		closedAt: timestamp('closed_at', { withTimezone: true })
 	},
-	(t) => [index('shifts_tenant_idx').on(t.tenantId, t.openedAt)]
+	(t) => [index('shifts_tenant_idx').on(t.tenantId, t.openedAt), index('shifts_user_idx').on(t.userId, t.closedAt)]
 );
 
 export const saleStatuses = ['completed', 'held', 'refunded', 'partially_refunded', 'voided'] as const;
@@ -61,12 +62,19 @@ export const sales = pgTable(
 		discountTotal: integer('discount_total').notNull().default(0),
 		taxTotal: integer('tax_total').notNull().default(0),
 		total: integer('total').notNull(),
+		/** Cash handed over by the customer and change given back (for the receipt). */
+		cashTendered: integer('cash_tendered').notNull().default(0),
+		changeGiven: integer('change_given').notNull().default(0),
 		note: text('note'),
+		voidedAt: timestamp('voided_at', { withTimezone: true }),
+		voidedBy: uuid('voided_by').references(() => users.id),
+		voidReason: text('void_reason'),
 		/** When the sale was made on the till (may be earlier than createdAt if it was offline). */
 		soldAt: timestamp('sold_at', { withTimezone: true }).notNull().defaultNow(),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
+		index('sales_shift_idx').on(t.shiftId),
 		uniqueIndex('sales_receipt_idx').on(t.tenantId, t.receiptNo),
 		index('sales_tenant_date_idx').on(t.tenantId, t.soldAt)
 	]
