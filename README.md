@@ -1,6 +1,6 @@
 # POS System (working name)
 
-A multi-business point-of-sale system by **MiddleCode Technologies**: one app for
+A multi-business point-of-sale system by **RiG_Designs**: one app for
 retail shops, restaurants/bars, pharmacies and salons. Each business switches on only
 the modules it needs.
 
@@ -55,6 +55,19 @@ To try PIN login: sign in as the owner → **Settings → This device → Set up
 Keyboard: **F2** jumps to the search box, **F9** opens payment, **Esc** closes the payment window.
 
 Managers can **void** a sale from **Sales → open the receipt → Void**. Stock goes back automatically.
+
+### Managing stock
+
+Open **Stock** in the sidebar (managers and owners).
+
+- **Overview** shows stock value at cost and selling price, plus what is running low or out. Click a product to see its history.
+- **Receive stock** records a delivery from a supplier: scan or search products, enter quantity and cost.
+  You can tick a box to update cost prices too. You can add a new supplier while you're there.
+- **Adjust stock** is for damaged, expired, lost or stolen items, or for correcting a wrong count (a note is required).
+- **Stock takes**: start a count (everything, or one category), type what is on the shelf, then **Complete**.
+  Stock is corrected to your count and the difference is shown in cedis. Products you don't count are left alone.
+  System numbers stay live during the count, so sales while you count are still taken into account.
+- **Movements** lists every stock change (sales, deliveries, adjustments, counts) with who did it.
 
 ## 2. Commands
 
@@ -138,11 +151,20 @@ Its sidebar links, permissions and product fields appear automatically.
 - [x] Shifts: open with a float, close with a cash count, over/short report
 - [x] Sales history by day (cashiers see only their own sales); voids with a reason
 
+### Stock
+
+- [x] Stock overview: value at cost and retail, low and out-of-stock filters
+- [x] Receiving deliveries from suppliers, with optional cost price updates
+- [x] Suppliers list with delivery totals
+- [x] Stock adjustments (damage, expiry, loss, corrections) with reasons and notes
+- [x] Stock takes: count, save progress, complete to correct stock, or cancel
+- [x] Full movement history per product, linked to the sale, delivery or count that caused it
+
 ## 5. Next steps
 
 - [ ] Customers and credit ("pay later") sales
 - [ ] Partial refunds and returns
-- [ ] Stock adjustments, purchases from suppliers, stock take
+- [ ] Stock transfers between branches; batch and expiry tracking (pharmacy)
 - [ ] Offline mode (service worker + local database + sync queue)
 - [ ] Desktop app (Tauri) with receipt printer support
 - [ ] Reports

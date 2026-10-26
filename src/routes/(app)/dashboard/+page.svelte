@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { CircleCheck, Circle, ArrowRight } from '@lucide/svelte';
+	import { CircleCheck, Circle, ArrowRight, Wallet, ReceiptText, Package, TriangleAlert } from '@lucide/svelte';
 	import PageHeader from '#lib/components/PageHeader.svelte';
+	import StatCard from '#lib/components/StatCard.svelte';
 	import { formatMoney } from '#lib/core/money.ts';
 	import type { PageProps } from './$types';
 
@@ -15,27 +16,15 @@
 
 <PageHeader title={welcome ? `Welcome, ${firstName}` : `Hello, ${firstName}`} subtitle={data.user.tenantName} />
 
-<div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-	<div class="card p-5">
-		<p class="text-sm text-muted">Sales today</p>
-		<p class="mt-2 text-xl font-semibold sm:text-2xl">{formatMoney(data.stats.salesToday, data.user.currency)}</p>
-	</div>
-	<div class="card p-5">
-		<p class="text-sm text-muted">Receipts today</p>
-		<p class="mt-2 text-2xl font-semibold">{data.stats.salesCountToday}</p>
-	</div>
-	<div class="card p-5">
-		<p class="text-sm text-muted">Active products</p>
-		<p class="mt-2 text-2xl font-semibold">{data.stats.products}</p>
-	</div>
-	<div class="card p-5">
-		<p class="text-sm text-muted">Low on stock</p>
-		<p class="mt-2 text-2xl font-semibold {data.stats.lowStock > 0 ? 'text-amber-600' : ''}">{data.stats.lowStock}</p>
-	</div>
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+	<StatCard highlight label="Sales today" icon={Wallet} value={formatMoney(data.stats.salesToday, data.user.currency)} />
+	<StatCard label="Receipts today" icon={ReceiptText} value={data.stats.salesCountToday} />
+	<StatCard label="Active products" icon={Package} value={data.stats.products} />
+	<StatCard label="Low on stock" icon={TriangleAlert} value={data.stats.lowStock} warn={data.stats.lowStock > 0} />
 </div>
 
 {#if setupLeft > 0}
-	<section class="card mt-6 p-6">
+	<section class="card mt-5 p-6">
 		<h2 class="font-semibold">Get your business ready</h2>
 		<p class="mt-1 text-sm text-muted">{setupLeft} of {data.setup.length} steps left</p>
 		<ul class="mt-4 divide-y divide-line">

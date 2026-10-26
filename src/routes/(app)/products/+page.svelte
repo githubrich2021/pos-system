@@ -3,10 +3,12 @@
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { formatMoney } from '#lib/core/money.ts';
 	import { can } from '#lib/core/permissions.ts';
+	import { formatQty } from '#lib/core/stock.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const canManage = $derived(can(data.user.permissions, 'products.manage'));
+	const canStock = $derived(can(data.user.permissions, 'stock.adjust'));
 </script>
 
 <svelte:head><title>Products</title></svelte:head>
@@ -47,7 +49,10 @@
 						<td class="text-right tabular-nums">
 							{#if !p.trackStock}<span class="text-muted">—</span>
 							{:else}
-								<span class={low ? 'badge bg-amber-100 text-amber-800' : ''}>{p.stock} {p.unit}</span>
+								<a
+									href={canStock ? `/stock/movements?product=${p.id}` : undefined}
+									class="{low ? 'badge bg-amber-100 text-amber-800' : ''} {canStock ? 'hover:underline' : ''}">{formatQty(p.stock)} {p.unit}</a
+								>
 							{/if}
 						</td>
 					</tr>

@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db, schema } from '../db';
-import { calculateSale, roundQty, settlePayments, PAYMENT_METHODS, type PaymentMethod } from '../../core/pricing';
+import { calculateSale, roundQty, DECIMAL_UNITS, settlePayments, PAYMENT_METHODS, type PaymentMethod } from '../../core/pricing';
 import { can } from '../../core/permissions';
 
 type Auth = NonNullable<App.Locals['auth']>;
@@ -24,7 +24,6 @@ export interface SaleInput {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DECIMAL_UNITS = new Set(['kg', 'g', 'litre', 'ml']);
 
 export async function getOpenShift(auth: Auth) {
 	const [shift] = await db

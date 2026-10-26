@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { ReceiptText } from '@lucide/svelte';
+	import { ReceiptText, Wallet } from '@lucide/svelte';
 	import PageHeader from '#lib/components/PageHeader.svelte';
+	import StatCard from '#lib/components/StatCard.svelte';
 	import { formatMoney } from '#lib/core/money.ts';
 	import { PAYMENT_METHODS } from '#lib/core/pricing.ts';
 	import type { PageProps } from './$types';
@@ -25,15 +26,9 @@
 	{/snippet}
 </PageHeader>
 
-<div class="mb-4 grid grid-cols-2 gap-3 sm:max-w-md">
-	<div class="card p-4">
-		<p class="text-sm text-muted">{data.isToday ? 'Today' : data.date}</p>
-		<p class="mt-1 text-xl font-semibold tabular-nums">{money(data.summary.total)}</p>
-	</div>
-	<div class="card p-4">
-		<p class="text-sm text-muted">Receipts</p>
-		<p class="mt-1 text-xl font-semibold">{data.summary.count}</p>
-	</div>
+<div class="mb-5 grid gap-4 sm:max-w-2xl sm:grid-cols-2">
+	<StatCard highlight label={data.isToday ? 'Total today' : `Total on ${data.date}`} icon={Wallet} value={money(data.summary.total)} />
+	<StatCard label="Receipts" icon={ReceiptText} value={data.summary.count} />
 </div>
 
 {#if data.sales.length === 0}

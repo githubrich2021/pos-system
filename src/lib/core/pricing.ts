@@ -28,6 +28,9 @@ export interface SaleTotals {
 	total: number;
 }
 
+/** Units that can be sold or counted in fractions (1.5 kg). Everything else is whole numbers. */
+export const DECIMAL_UNITS = new Set(['kg', 'g', 'litre', 'ml']);
+
 export const roundQty = (q: number) => Math.round(q * 1000) / 1000;
 
 export function calculateSale(lines: PriceLine[], cartDiscount = 0): SaleTotals {

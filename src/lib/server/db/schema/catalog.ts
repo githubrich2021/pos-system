@@ -106,6 +106,9 @@ export const stockReasons = [
 	'refund',
 	'adjustment',
 	'damage',
+	'loss',
+	'expired',
+	'stock_take',
 	'transfer_in',
 	'transfer_out'
 ] as const;

@@ -6,15 +6,22 @@
  */
 @theme {
 	--font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-	--color-brand-50: oklch(0.97 0.02 165);
-	--color-brand-100: oklch(0.93 0.05 165);
-	--color-brand-500: oklch(0.6 0.13 165);
-	--color-brand-600: oklch(0.52 0.12 165);
-	--color-brand-700: oklch(0.45 0.1 165);
-	--color-ink: oklch(0.22 0.02 250);
-	--color-muted: oklch(0.52 0.02 250);
-	--color-line: oklch(0.91 0.01 250);
-	--color-canvas: oklch(0.975 0.004 250);
+	/* Deep pharmacy green */
+	--color-brand-50: oklch(0.965 0.02 165);
+	--color-brand-100: oklch(0.92 0.035 165);
+	--color-brand-500: oklch(0.48 0.07 168);
+	--color-brand-600: oklch(0.4 0.06 168);
+	--color-brand-700: oklch(0.34 0.055 168);
+	/* Sidebar and highlighted cards */
+	--color-forest: oklch(0.3 0.045 168);
+	--color-forest-light: oklch(0.36 0.05 168);
+	/* Lime accent for primary actions and the active menu item */
+	--color-lime: oklch(0.92 0.16 118);
+	--color-lime-dark: oklch(0.87 0.17 118);
+	--color-ink: oklch(0.22 0.02 200);
+	--color-muted: oklch(0.55 0.015 200);
+	--color-line: oklch(0.92 0.008 180);
+	--color-canvas: oklch(0.96 0.006 180);
 }
 
 @layer base {
@@ -28,42 +35,57 @@
 
 @layer components {
 	.card {
-		@apply rounded-xl border border-line bg-white;
+		@apply rounded-2xl bg-white shadow-[0_1px_2px_rgb(0_0_0/0.03)];
 	}
 	.label {
 		@apply mb-1.5 block text-sm font-medium text-ink;
 	}
 	.input {
-		@apply block w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none;
+		@apply block w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none;
 	}
 	.btn-primary {
-		@apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-brand-600 text-white hover:bg-brand-700;
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-lime text-forest hover:bg-lime-dark;
 	}
 	.btn-secondary {
-		@apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-line bg-white text-ink hover:bg-canvas;
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-line bg-white text-ink hover:bg-canvas;
 	}
 	.btn-danger {
-		@apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-red-200 bg-white text-red-700 hover:bg-red-50;
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-red-200 bg-white text-red-700 hover:bg-red-50;
 	}
 	.alert-error {
-		@apply rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800;
+		@apply rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800;
 	}
 	.alert-success {
-		@apply rounded-lg border border-brand-100 bg-brand-50 px-3 py-2.5 text-sm text-brand-700;
+		@apply rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 text-sm text-brand-700;
 	}
 	.badge {
 		@apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
 	}
+	/* Change pill shown under stat numbers, e.g. "↗ +8%" */
+	.trend {
+		@apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+	}
 	.table-base {
-		@apply w-full text-left text-sm;
+		@apply w-full border-separate border-spacing-0 text-left text-sm;
 	}
 	.table-base th {
-		@apply border-b border-line px-4 py-3 text-xs font-medium tracking-wide text-muted uppercase;
+		@apply bg-brand-50 px-4 py-3.5 text-xs font-medium text-muted;
+	}
+	.table-base th:first-child {
+		@apply rounded-l-xl;
+	}
+	.table-base th:last-child {
+		@apply rounded-r-xl;
 	}
 	.table-base td {
-		@apply border-b border-line px-4 py-3;
+		@apply border-b border-line/60 px-4 py-3.5;
 	}
 	.table-base tr:last-child td {
 		@apply border-b-0;
+	}
+	/* Tables inside a card get breathing room so the tinted header floats */
+	.card > .table-base,
+	.card:has(> .table-base) {
+		@apply p-3;
 	}
 }

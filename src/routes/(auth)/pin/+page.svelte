@@ -72,7 +72,7 @@
 
 		<div class="mt-6 flex justify-center gap-3" aria-label="PIN entered">
 			{#each Array(6) as _, i}
-				<span class="size-3.5 rounded-full {i < pin.length ? 'bg-brand-600' : 'bg-line'}"></span>
+				<span class="size-3.5 rounded-full {i < pin.length ? 'bg-lime' : 'bg-white/25'}"></span>
 			{/each}
 		</div>
 		{#if form?.message && form.userId === userId}<p class="alert-error mt-4 text-center">{form.message}</p>{/if}
