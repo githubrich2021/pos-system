@@ -56,6 +56,40 @@ Keyboard: **F2** jumps to the search box, **F9** opens payment, **Esc** closes t
 
 Managers can **void** a sale from **Sales → open the receipt → Void**. Stock goes back automatically.
 
+### Refunds and returns
+
+Open the sale (**Sales → the receipt**) and tap **Refund** (managers and owners).
+
+- Enter how many of each item is coming back. Weighed items can be part-refunded (0.5 kg). **Refund everything left** fills it in for you.
+- Untick **Back in stock?** for damaged items so they don't go back on the shelf.
+- Choose how the money goes back: cash (comes off the shift drawer, so a shift must be open), MoMo, card, bank,
+  or **Take off what they owe** for customers with a balance.
+- You can never pay out more than the sale actually took in. For a "pay later" sale, the unpaid part can only be taken off the customer's balance.
+- A sale can be refunded in several goes. Each refund prints a slip, and sales, shift and dashboard totals take refunds off.
+- Use **Void** to cancel a whole sale by mistake. Once a sale has a refund, refund the rest instead of voiding it.
+
+### Customers and "pay later"
+
+- On the till, tap **Add customer** above the cart to search by name or phone, or add a new customer on the spot.
+- If the customer has a **credit limit**, the payment window shows **Pay later**. The amount can't take them over their limit,
+  and it can be combined with cash or MoMo (e.g. pay half now, half later).
+- **Customers** in the sidebar lists everyone and what they owe. Open a customer to see their statement and
+  **Record payment** when they pay you back (with a printable receipt). Cash payments need an open shift and count towards the drawer.
+- Only managers and owners can set credit limits. A manager can cancel a payment entered by mistake.
+- Voiding a "pay later" sale removes it from what the customer owes.
+
+### Reports
+
+Open **Reports** in the sidebar (owners, managers and accountants).
+
+- Pick a period (today, this week, last month…) or your own dates, and a branch if you have more than one.
+- The top shows net sales, gross profit, VAT collected and refunds, with a chart of net sales per day.
+- **Summary** walks from gross sales to gross profit: discounts, refunds, VAT and cost of goods.
+- Breakdowns by **product**, **category**, **staff**, **payment method** and **day**. Each one downloads as a CSV for Excel.
+- How the numbers work: a sale counts on the day it was made, and a refund on the day the money went back.
+  Voided sales are left out. Cost uses the cost price at the time of each sale; a returned item that went back on
+  the shelf gives its cost back, a damaged one doesn't.
+
 ### Managing stock
 
 Open **Stock** in the sidebar (managers and owners).
@@ -151,6 +185,32 @@ Its sidebar links, permissions and product fields appear automatically.
 - [x] Shifts: open with a float, close with a cash count, over/short report
 - [x] Sales history by day (cashiers see only their own sales); voids with a reason
 
+### Reports
+
+- [x] Any period (presets or custom dates), per branch or all branches
+- [x] Net sales, gross profit and margin, VAT collected, refunds, discounts, average sale
+- [x] Daily net sales chart with hover details
+- [x] By product, category, staff, payment method and day, each downloadable as CSV
+- [x] Credit given, customer payments received, voided sales and stock losses
+- [x] Printable
+
+### Refunds
+
+- [x] Partial and full refunds, in several goes, per item and quantity (including weighed items)
+- [x] Choose per item whether it goes back into stock
+- [x] Refund by cash, MoMo, card, bank, or off the customer's balance; never more than the sale took in
+- [x] Refund amounts follow the sale's discount and add up to the sale total exactly
+- [x] Printable refund slips; refunds come off sales, shift drawer and dashboard totals
+
+### Customers & credit
+
+- [x] Customers with phone, email, notes and a credit limit
+- [x] Attach a customer to a sale from the till; quick-add new customers
+- [x] "Pay later" sales, alone or split with other payments, checked against the credit limit
+- [x] What each customer owes, worked out from their sales and repayments (never a stored total)
+- [x] Repayments by cash, MoMo, card or bank, with printed receipts; cash counts in the shift drawer
+- [x] Customer statement with a running balance; managers can cancel a wrong payment
+
 ### Stock
 
 - [x] Stock overview: value at cost and retail, low and out-of-stock filters
@@ -162,11 +222,8 @@ Its sidebar links, permissions and product fields appear automatically.
 
 ## 5. Next steps
 
-- [ ] Customers and credit ("pay later") sales
-- [ ] Partial refunds and returns
 - [ ] Stock transfers between branches; batch and expiry tracking (pharmacy)
 - [ ] Offline mode (service worker + local database + sync queue)
 - [ ] Desktop app (Tauri) with receipt printer support
-- [ ] Reports
 
 > VAT is seeded at 15% as a placeholder — confirm current GRA rates and levies before launch.

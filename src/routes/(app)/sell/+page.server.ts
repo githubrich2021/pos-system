@@ -54,6 +54,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		products,
 		categories: categories.filter((c) => products.some((p) => p.categoryId === c.id)),
 		canDiscount: can(auth.permissions, 'sales.discount'),
+		canAddCustomer: can(auth.permissions, 'customers.manage'),
 		shiftOpenedAt: shift.openedAt
 	};
 };

@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { Search, Plus, Minus, Trash, CirclePause, ScanBarcode, Clock, Percent, ShoppingCart } from '@lucide/svelte';
 	import PaymentDialog from '#lib/components/sell/PaymentDialog.svelte';
+	import CustomerSelect, { type TillCustomer } from '#lib/components/sell/CustomerSelect.svelte';
 	import { formatMoney, toMinor } from '#lib/core/money.ts';
 	import { calculateSale, roundQty, type TenderedPayment } from '#lib/core/pricing.ts';
 	import { uuid } from '#lib/uuid.ts';
@@ -25,6 +26,7 @@
 		at: string;
 		lines: CartLine[];
 		discount: number;
+		customer?: TillCustomer | null;
 	}
 
 	const HELD_KEY = 'pos.held.v1';
@@ -35,6 +37,7 @@
 	let categoryId = $state<string | null>(null);
 	let cart = $state<CartLine[]>([]);
 	let discount = $state(0);
+	let customer = $state<TillCustomer | null>(null);
 	let held = $state<HeldSale[]>([]);
 	let showHeld = $state(false);
 	let paying = $state(false);
@@ -124,6 +127,7 @@
 	function clearCart() {
 		cart = [];
 		discount = 0;
+		customer = null;
 		editingDiscount = false;
 		notice = '';
 		saleId = uuid();
@@ -140,7 +144,7 @@
 
 	function hold() {
 		if (!cart.length) return;
-		held.unshift({ id: uuid(), at: new Date().toISOString(), lines: $state.snapshot(cart), discount });
+		held.unshift({ id: uuid(), at: new Date().toISOString(), lines: $state.snapshot(cart), discount, customer: $state.snapshot(customer) });
 		saveHeld();
 		clearCart();
 		notice = 'Sale put on hold';
@@ -150,6 +154,7 @@
 		if (cart.length) hold();
 		cart = h.lines;
 		discount = h.discount;
+		customer = h.customer ?? null;
 		held = held.filter((x) => x.id !== h.id);
 		saveHeld();
 		showHeld = false;
@@ -167,6 +172,7 @@
 					lines: cart.map((l) => ({ productId: l.productId, quantity: l.quantity })),
 					discount,
 					payments,
+					customerId: customer?.id ?? null,
 					soldAt: new Date().toISOString()
 				})
 			});
@@ -273,6 +279,8 @@
 			</div>
 		</header>
 
+		<CustomerSelect bind:customer currency={data.user.currency} canAdd={data.canAddCustomer} />
+
 		{#if showHeld}
 			<ul class="divide-y divide-line border-b border-line bg-canvas">
 				{#each held as h (h.id)}
@@ -280,7 +288,7 @@
 					<li>
 						<button class="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-white" onclick={() => resume(h)}>
 							<span>
-								<span class="font-medium">{h.lines.length} item{h.lines.length === 1 ? '' : 's'}</span>
+								<span class="font-medium">{h.customer?.name ?? `${h.lines.length} item${h.lines.length === 1 ? '' : 's'}`}</span>
 								<span class="text-xs text-muted"> · held {new Date(h.at).toLocaleTimeString('en-GB', { timeStyle: 'short' })}</span>
 							</span>
 							<span class="tabular-nums">{money(t.total)}</span>
@@ -372,6 +380,7 @@
 	<PaymentDialog
 		total={totals.total}
 		currency={data.user.currency}
+		{customer}
 		onComplete={completeSale}
 		onClose={() => (paying = false)}
 		onNewSale={newSale}

@@ -26,6 +26,15 @@
 			<div class="flex justify-between py-2.5"><dt class="text-muted">{methodName(m.method)}</dt><dd class="tabular-nums">{money(m.amount)}</dd></div>
 		{/each}
 		{#if s.voidedCount}<div class="flex justify-between py-2.5"><dt class="text-muted">Voided sales</dt><dd>{s.voidedCount}</dd></div>{/if}
+		{#each s.refunds as r (r.method)}
+			<div class="flex justify-between py-2.5 text-red-700">
+				<dt>Refunds · {r.method === 'account' ? 'off customer accounts' : methodName(r.method)} ({r.count})</dt>
+				<dd class="tabular-nums">−{money(r.amount)}</dd>
+			</div>
+		{/each}
+		{#each s.repayments as r (r.method)}
+			<div class="flex justify-between py-2.5"><dt class="text-muted">Customer payments · {methodName(r.method)}</dt><dd class="tabular-nums">{money(r.amount)}</dd></div>
+		{/each}
 		<div class="flex justify-between py-2.5"><dt class="text-muted">Opening cash</dt><dd class="tabular-nums">{money(openingCash)}</dd></div>
 		<div class="flex justify-between py-2.5 font-semibold"><dt>Cash expected in drawer</dt><dd class="tabular-nums">{money(s.expectedCash)}</dd></div>
 	</dl>

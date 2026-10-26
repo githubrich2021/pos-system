@@ -3,6 +3,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { db, schema } from '../db';
 import { calculateSale, roundQty, DECIMAL_UNITS, settlePayments, PAYMENT_METHODS, type PaymentMethod } from '../../core/pricing';
 import { can } from '../../core/permissions';
+import { customerBalances } from './customers';
 
 type Auth = NonNullable<App.Locals['auth']>;
 type Device = App.Locals['device'];
@@ -21,6 +22,8 @@ export interface SaleInput {
 	payments: { method: string; amount: number; reference?: string }[];
 	note?: string;
 	soldAt?: string;
+	/** Optional named customer. Required for "pay later" (credit) payments. */
+	customerId?: string | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -111,6 +114,14 @@ export async function createSale(auth: Auth, device: Device, input: SaleInput) {
 		};
 	});
 	if (payments.length === 0 || payments.length > 10) throw new SaleError('Add a payment.');
+	const creditAmount = payments.filter((p) => p.method === 'credit').reduce((a, p) => a + p.amount, 0);
+
+	let customerId: string | null = null;
+	if (input.customerId) {
+		if (!UUID.test(input.customerId)) throw new SaleError('Customer not found.');
+		customerId = input.customerId;
+	}
+	if (creditAmount > 0 && !customerId) throw new SaleError('Choose the customer before using Pay later.');
 	const settled = settlePayments(totals.total, payments);
 	if (settled.error) throw new SaleError(settled.error);
 
@@ -118,6 +129,26 @@ export async function createSale(auth: Auth, device: Device, input: SaleInput) {
 	if (Number.isNaN(soldAt.getTime()) || soldAt.getTime() > Date.now() + 5 * 60 * 1000) throw new SaleError('Invalid sale time.');
 
 	return db.transaction(async (tx) => {
+		if (customerId) {
+			// Lock the customer so two tills can't both use the same credit at once
+			const [customer] = await tx
+				.select()
+				.from(schema.customers)
+				.where(and(eq(schema.customers.id, customerId), eq(schema.customers.tenantId, auth.tenantId)))
+				.for('update');
+			if (!customer) throw new SaleError('Customer not found.');
+			if (creditAmount > 0) {
+				if (customer.creditLimit <= 0) throw new SaleError(`${customer.name} is not set up to buy on credit.`);
+				const owed = (await customerBalances(tx, auth.tenantId, [customer.id])).get(customer.id) ?? 0;
+				const available = customer.creditLimit - owed;
+				if (creditAmount > available) {
+					throw new SaleError(
+						`${customer.name} can only take ${(Math.max(0, available) / 100).toFixed(2)} ${auth.currency} more on credit (limit ${(customer.creditLimit / 100).toFixed(2)}).`
+					);
+				}
+			}
+		}
+
 		// Next receipt number: per till, or per business for unregistered browsers
 		let receiptNo: string;
 		if (device && device.tenantId === auth.tenantId) {
@@ -143,6 +174,7 @@ export async function createSale(auth: Auth, device: Device, input: SaleInput) {
 			deviceId: device?.tenantId === auth.tenantId ? device.id : null,
 			shiftId: shift.id,
 			userId: auth.userId,
+			customerId,
 			receiptNo,
 			status: 'completed',
 			source: 'retail',
@@ -218,6 +250,7 @@ export async function voidSale(auth: Auth, saleId: string, reason: string) {
 			.where(and(eq(schema.sales.id, saleId), eq(schema.sales.tenantId, auth.tenantId)))
 			.for('update');
 		if (!sale) throw new SaleError('Sale not found.', 404);
+		if (sale.status === 'partially_refunded') throw new SaleError('This sale has a refund. Refund the remaining items instead of voiding it.');
 		if (sale.status !== 'completed') throw new SaleError('This sale has already been voided or refunded.');
 
 		await tx
@@ -266,7 +299,7 @@ export async function shiftSummary(shiftId: string, openingCash: number) {
 			total: sql<number>`coalesce(sum(${schema.sales.total}), 0)`.mapWith(Number)
 		})
 		.from(schema.sales)
-		.where(and(eq(schema.sales.shiftId, shiftId), eq(schema.sales.status, 'completed')));
+		.where(and(eq(schema.sales.shiftId, shiftId), inArray(schema.sales.status, [...schema.countedSaleStatuses])));
 
 	const byMethod = await db
 		.select({
@@ -275,7 +308,7 @@ export async function shiftSummary(shiftId: string, openingCash: number) {
 		})
 		.from(schema.payments)
 		.innerJoin(schema.sales, eq(schema.sales.id, schema.payments.saleId))
-		.where(and(eq(schema.sales.shiftId, shiftId), eq(schema.sales.status, 'completed')))
+		.where(and(eq(schema.sales.shiftId, shiftId), inArray(schema.sales.status, [...schema.countedSaleStatuses])))
 		.groupBy(schema.payments.method);
 
 	const [voided] = await db
@@ -283,13 +316,40 @@ export async function shiftSummary(shiftId: string, openingCash: number) {
 		.from(schema.sales)
 		.where(and(eq(schema.sales.shiftId, shiftId), eq(schema.sales.status, 'voided')));
 
+	// Money customers paid towards what they owe, taken during this shift
+	const repayments = await db
+		.select({
+			method: schema.customerPayments.method,
+			amount: sql<number>`coalesce(sum(${schema.customerPayments.amount}), 0)`.mapWith(Number)
+		})
+		.from(schema.customerPayments)
+		.where(and(eq(schema.customerPayments.shiftId, shiftId), isNull(schema.customerPayments.voidedAt)))
+		.groupBy(schema.customerPayments.method);
+
+	// Refunds given during this shift (on any sale). Cash ones came out of the drawer.
+	const refunded = await db
+		.select({
+			method: schema.refunds.method,
+			amount: sql<number>`coalesce(sum(${schema.refunds.amount}), 0)`.mapWith(Number),
+			count: sql<number>`count(*)`.mapWith(Number)
+		})
+		.from(schema.refunds)
+		.where(eq(schema.refunds.shiftId, shiftId))
+		.groupBy(schema.refunds.method);
+
 	const cash = byMethod.find((m) => m.method === 'cash')?.amount ?? 0;
+	const cashRepaid = repayments.find((m) => m.method === 'cash')?.amount ?? 0;
+	const cashRefunded = refunded.find((m) => m.method === 'cash')?.amount ?? 0;
 	return {
 		salesCount: sales.count,
 		salesTotal: sales.total,
 		voidedCount: voided.count,
 		byMethod,
-		expectedCash: openingCash + cash
+		repayments,
+		repaidTotal: repayments.reduce((a, r) => a + r.amount, 0),
+		refunds: refunded,
+		refundedTotal: refunded.reduce((a, r) => a + r.amount, 0),
+		expectedCash: openingCash + cash + cashRepaid - cashRefunded
 	};
 }
 
@@ -307,12 +367,15 @@ export async function getSaleDetail(auth: Auth, saleId: string) {
 			cashier: cashier.name,
 			voidedByName: voider.name,
 			branch: schema.branches.name,
+			customer: schema.customers.name,
+			customerPhone: schema.customers.phone,
 			tenant: schema.tenants
 		})
 		.from(schema.sales)
 		.innerJoin(cashier, eq(cashier.id, schema.sales.userId))
 		.leftJoin(voider, eq(voider.id, schema.sales.voidedBy))
 		.innerJoin(schema.branches, eq(schema.branches.id, schema.sales.branchId))
+		.leftJoin(schema.customers, eq(schema.customers.id, schema.sales.customerId))
 		.innerJoin(schema.tenants, eq(schema.tenants.id, schema.sales.tenantId))
 		.where(and(eq(schema.sales.id, saleId), eq(schema.sales.tenantId, auth.tenantId)));
 	if (!row) return null;

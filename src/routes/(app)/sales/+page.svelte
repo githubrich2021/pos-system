@@ -27,7 +27,13 @@
 </PageHeader>
 
 <div class="mb-5 grid gap-4 sm:max-w-2xl sm:grid-cols-2">
-	<StatCard highlight label={data.isToday ? 'Total today' : `Total on ${data.date}`} icon={Wallet} value={money(data.summary.total)} />
+	<StatCard
+		highlight
+		label={data.isToday ? 'Total today' : `Total on ${data.date}`}
+		icon={Wallet}
+		value={money(data.summary.total)}
+		note={data.summary.refunded ? `After ${money(data.summary.refunded)} of refunds` : undefined}
+	/>
 	<StatCard label="Receipts" icon={ReceiptText} value={data.summary.count} />
 </div>
 
@@ -42,15 +48,20 @@
 			<thead><tr><th>Time</th><th>Receipt</th>{#if data.seeAll}<th>Cashier</th>{/if}<th>Paid by</th><th class="text-right">Total</th></tr></thead>
 			<tbody>
 				{#each data.sales as s (s.id)}
-					<tr class="cursor-pointer hover:bg-canvas {s.status !== 'completed' ? 'text-muted' : ''}" onclick={() => goto(`/sales/${s.id}`)}>
+					<tr class="cursor-pointer hover:bg-canvas {s.status === 'voided' || s.status === 'refunded' ? 'text-muted' : ''}" onclick={() => goto(`/sales/${s.id}`)}>
 						<td class="tabular-nums">{new Date(s.soldAt).toLocaleTimeString('en-GB', { timeStyle: 'short' })}</td>
 						<td>
 							<a href="/sales/{s.id}" class="font-mono text-xs font-medium text-ink hover:underline">{s.receiptNo}</a>
-							{#if s.status === 'voided'}<span class="badge ml-1 bg-red-50 text-red-700">Voided</span>{/if}
+							{#if s.status === 'voided'}<span class="badge ml-1 bg-red-50 text-red-700">Voided</span>
+							{:else if s.status === 'refunded'}<span class="badge ml-1 bg-amber-100 text-amber-800">Refunded</span>
+							{:else if s.status === 'partially_refunded'}<span class="badge ml-1 bg-amber-100 text-amber-800">Part refunded</span>{/if}
 						</td>
 						{#if data.seeAll}<td>{s.cashier}</td>{/if}
 						<td class="text-muted">{(s.methods ?? []).map(methodName).join(', ')}</td>
-						<td class="text-right font-medium tabular-nums {s.status === 'voided' ? 'line-through' : ''}">{money(s.total)}</td>
+						<td class="text-right font-medium tabular-nums {s.status === 'voided' ? 'line-through' : ''}">
+							{money(s.total)}
+							{#if s.refunded}<p class="text-xs font-normal text-red-700">−{money(s.refunded)} refunded</p>{/if}
+						</td>
 					</tr>
 				{/each}
 			</tbody>

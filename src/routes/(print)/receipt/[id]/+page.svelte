@@ -38,6 +38,7 @@
 	<p class="flex justify-between"><span>Receipt</span><span>{s.receiptNo}</span></p>
 	<p class="flex justify-between"><span>Date</span><span>{new Date(s.soldAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}</span></p>
 	<p class="flex justify-between"><span>Served by</span><span>{d.cashier}</span></p>
+	{#if d.customer}<p class="flex justify-between"><span>Customer</span><span>{d.customer}</span></p>{/if}
 	{#if s.status === 'voided'}<p class="mt-1 text-center font-bold">*** VOIDED ***</p>{/if}
 	<div class="my-2 border-t border-dashed border-black"></div>
 
@@ -64,6 +65,9 @@
 		{/if}
 	{/each}
 	{#if s.changeGiven}<p class="flex justify-between font-bold"><span>Change</span><span>{money(s.changeGiven)}</span></p>{/if}
+	{#if d.payments.some((p) => p.method === 'credit' && p.status === 'paid')}
+		<p class="mt-1 text-center">Amount marked "Pay later" is owed by the customer.</p>
+	{/if}
 
 	<div class="my-2 border-t border-dashed border-black"></div>
 	<p class="text-center">{t.receiptFooter ?? 'Thank you for your business!'}</p>

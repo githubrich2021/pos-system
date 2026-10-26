@@ -1,4 +1,4 @@
-import { and, count, eq, gte, isNotNull, sql, sum } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, isNotNull, sql, sum } from 'drizzle-orm';
 import { db, schema } from '#lib/server/db/index.ts';
 import { requireUser } from '#lib/server/auth/guard.ts';
 import type { PageServerLoad } from './$types';
@@ -10,11 +10,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const startOfDay = new Date();
 	startOfDay.setHours(0, 0, 0, 0);
 
-	const [[today], [products], [staffWithPin], [devices], lowStock] = await Promise.all([
+	const [[today], [refundedToday], [products], [staffWithPin], [devices], lowStock] = await Promise.all([
 		db
 			.select({ total: sum(schema.sales.total).mapWith(Number), count: count() })
 			.from(schema.sales)
-			.where(and(eq(schema.sales.tenantId, t), eq(schema.sales.status, 'completed'), gte(schema.sales.soldAt, startOfDay))),
+			.where(and(eq(schema.sales.tenantId, t), inArray(schema.sales.status, [...schema.countedSaleStatuses]), gte(schema.sales.soldAt, startOfDay))),
+		// Money given back today, taken off today's takings
+		db
+			.select({ total: sum(schema.refunds.amount).mapWith(Number) })
+			.from(schema.refunds)
+			.where(and(eq(schema.refunds.tenantId, t), gte(schema.refunds.createdAt, startOfDay))),
 		db
 			.select({ count: count() })
 			.from(schema.products)
@@ -39,7 +44,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		stats: {
-			salesToday: today?.total ?? 0,
+			salesToday: (today?.total ?? 0) - (refundedToday?.total ?? 0),
 			salesCountToday: today?.count ?? 0,
 			products: products.count,
 			lowStock: lowStock[0]?.count ?? 0

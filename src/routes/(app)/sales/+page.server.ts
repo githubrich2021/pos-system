@@ -32,7 +32,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			status: schema.sales.status,
 			cashier: cashier.name,
 			methods: sql<string[]>`(select array_agg(distinct p.method) from ${schema.payments} p where p.sale_id = ${schema.sales.id})`,
-			items: sql<number>`(select count(*) from ${schema.saleItems} i where i.sale_id = ${schema.sales.id})`.mapWith(Number)
+			items: sql<number>`(select count(*) from ${schema.saleItems} i where i.sale_id = ${schema.sales.id})`.mapWith(Number),
+			refunded: sql<number>`(select coalesce(sum(r.amount), 0) from ${schema.refunds} r where r.sale_id = ${schema.sales.id})`.mapWith(Number)
 		})
 		.from(schema.sales)
 		.innerJoin(cashier, eq(cashier.id, schema.sales.userId))
@@ -40,12 +41,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.orderBy(desc(schema.sales.soldAt))
 		.limit(500);
 
-	const completed = sales.filter((s) => s.status === 'completed');
+	// Voided sales don't count; refunds are taken off the sales they belong to
+	const counted = sales.filter((s) => s.status !== 'voided' && s.status !== 'held');
 	return {
 		sales,
 		date,
 		isToday: date === today,
 		seeAll,
-		summary: { count: completed.length, total: completed.reduce((a, s) => a + s.total, 0) }
+		summary: {
+			count: counted.length,
+			total: counted.reduce((a, s) => a + s.total - s.refunded, 0),
+			refunded: counted.reduce((a, s) => a + s.refunded, 0)
+		}
 	};
 };

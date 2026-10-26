@@ -1,4 +1,4 @@
-import { Boxes, LayoutDashboard, Package, ReceiptText, Settings } from '@lucide/svelte';
+import { BarChart3, Boxes, LayoutDashboard, Package, ReceiptText, Settings, Users } from '@lucide/svelte';
 import type { NavItem } from './core/modules';
 import { can } from './core/permissions';
 import { enabledModules } from './modules';
@@ -7,7 +7,9 @@ const CORE_TOP: NavItem[] = [
 	{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 	{ label: 'Sales', href: '/sales', icon: ReceiptText, permission: 'sales.create' },
 	{ label: 'Products', href: '/products', icon: Package, permission: 'products.view' },
-	{ label: 'Stock', href: '/stock', icon: Boxes, permission: 'stock.adjust' }
+	{ label: 'Stock', href: '/stock', icon: Boxes, permission: 'stock.adjust' },
+	{ label: 'Customers', href: '/customers', icon: Users, permission: 'customers.manage' },
+	{ label: 'Reports', href: '/reports', icon: BarChart3, permission: 'reports.view' }
 ];
 
 /**

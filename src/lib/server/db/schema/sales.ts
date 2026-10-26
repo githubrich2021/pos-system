@@ -1,4 +1,4 @@
-import { index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { id } from './_shared';
 import { branches, tenants } from './tenancy';
 import { customers, devices, users } from './people';
@@ -147,4 +147,103 @@ export const expenses = pgTable(
 		spentAt: timestamp('spent_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [index('expenses_tenant_idx').on(t.tenantId, t.spentAt)]
+);
+
+export const repaymentMethods = ['cash', 'momo', 'card', 'bank'] as const;
+
+/**
+ * Money a customer pays towards what they owe from "pay later" sales.
+ * What a customer owes = credit payments on their completed sales − these repayments.
+ * Rows are never edited; a mistake is voided with a reason.
+ */
+export const customerPayments = pgTable(
+	'customer_payments',
+	{
+		id: id(),
+		tenantId: uuid('tenant_id')
+			.notNull()
+			.references(() => tenants.id, { onDelete: 'cascade' }),
+		customerId: uuid('customer_id')
+			.notNull()
+			.references(() => customers.id, { onDelete: 'cascade' }),
+		branchId: uuid('branch_id')
+			.notNull()
+			.references(() => branches.id),
+		/** The shift it was taken in, so cash repayments count towards the drawer. */
+		shiftId: uuid('shift_id').references(() => shifts.id),
+		userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+		method: text('method', { enum: repaymentMethods }).notNull(),
+		amount: integer('amount').notNull(),
+		reference: text('reference'),
+		note: text('note'),
+		voidedAt: timestamp('voided_at', { withTimezone: true }),
+		voidedBy: uuid('voided_by').references(() => users.id, { onDelete: 'set null' }),
+		voidReason: text('void_reason'),
+		paidAt: timestamp('paid_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [index('customer_payments_customer_idx').on(t.customerId, t.paidAt), index('customer_payments_shift_idx').on(t.shiftId)]
+);
+
+/** Sales that still count as sales (a voided sale doesn't). Refunds are subtracted separately. */
+export const countedSaleStatuses = ['completed', 'partially_refunded', 'refunded'] as const;
+
+/**
+ * How refund money went back: paid out, or taken off what the customer owes ("account").
+ */
+export const refundMethods = ['cash', 'momo', 'card', 'bank', 'account'] as const;
+
+/**
+ * Money and items returned against a sale. A sale can have several refunds (partial returns).
+ * Like sales, refunds are never edited.
+ */
+export const refunds = pgTable(
+	'refunds',
+	{
+		id: id(),
+		tenantId: uuid('tenant_id')
+			.notNull()
+			.references(() => tenants.id, { onDelete: 'cascade' }),
+		branchId: uuid('branch_id')
+			.notNull()
+			.references(() => branches.id),
+		saleId: uuid('sale_id')
+			.notNull()
+			.references(() => sales.id, { onDelete: 'cascade' }),
+		/** The shift the money left from, so cash refunds come off the drawer. */
+		shiftId: uuid('shift_id').references(() => shifts.id),
+		userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+		method: text('method', { enum: refundMethods }).notNull(),
+		/** Total given back, in pesewas. */
+		amount: integer('amount').notNull(),
+		/** VAT included in the amount, so tax reports can be corrected. */
+		tax: integer('tax').notNull().default(0),
+		reference: text('reference'),
+		reason: text('reason').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [index('refunds_sale_idx').on(t.saleId), index('refunds_tenant_idx').on(t.tenantId, t.createdAt), index('refunds_shift_idx').on(t.shiftId)]
+);
+
+export const refundItems = pgTable(
+	'refund_items',
+	{
+		id: id(),
+		tenantId: uuid('tenant_id')
+			.notNull()
+			.references(() => tenants.id, { onDelete: 'cascade' }),
+		refundId: uuid('refund_id')
+			.notNull()
+			.references(() => refunds.id, { onDelete: 'cascade' }),
+		saleItemId: uuid('sale_item_id')
+			.notNull()
+			.references(() => saleItems.id, { onDelete: 'cascade' }),
+		productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
+		name: text('name').notNull(),
+		quantity: numeric('quantity', { precision: 12, scale: 3, mode: 'number' }).notNull(),
+		amount: integer('amount').notNull(),
+		tax: integer('tax').notNull().default(0),
+		/** false = the item was damaged or thrown away, so it did not go back into stock. */
+		restocked: boolean('restocked').notNull()
+	},
+	(t) => [index('refund_items_refund_idx').on(t.refundId), index('refund_items_sale_item_idx').on(t.saleItemId)]
 );

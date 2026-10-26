@@ -69,7 +69,9 @@ export const PAYMENT_METHODS = {
 	cash: 'Cash',
 	momo: 'Mobile money',
 	card: 'Card',
-	bank: 'Bank transfer'
+	bank: 'Bank transfer',
+	/** The customer owes it. Only for a named customer with a credit limit. */
+	credit: 'Pay later'
 } as const;
 export type PaymentMethod = keyof typeof PAYMENT_METHODS;
 
@@ -81,7 +83,7 @@ export interface TenderedPayment {
 
 /**
  * Checks payments against the total. Only cash can be over-paid (the difference is change);
- * MoMo, card and bank payments must not exceed what is owed.
+ * MoMo, card, bank and pay-later amounts must not exceed what is owed.
  */
 export function settlePayments(total: number, payments: TenderedPayment[]) {
 	const cash = payments.filter((p) => p.method === 'cash').reduce((a, p) => a + p.amount, 0);
@@ -92,9 +94,23 @@ export function settlePayments(total: number, payments: TenderedPayment[]) {
 
 	let error: string | null = null;
 	if (payments.some((p) => !Number.isInteger(p.amount) || p.amount <= 0)) error = 'Each payment must be more than zero.';
-	else if (nonCash > total) error = 'Mobile money, card and bank payments cannot be more than the total.';
+	else if (nonCash > total) error = 'Only cash can be more than the total.';
 	else if (paid < total) error = 'The payment does not cover the total.';
 	else if (change > cash) error = 'Change can only be given from cash.';
 
 	return { paid, remaining, change, cashTendered: cash, cashApplied: cash - change, error };
+}
+
+/**
+ * Money for refunding `qty` of a sale line, in proportion to what the line cost after discount.
+ * Refunding the last of a line takes whatever is left, so rounding never drifts.
+ */
+export function lineRefund(
+	line: { sold: number; remaining: number; lineTotal: number; tax: number; refundedAmount: number; refundedTax: number },
+	qty: number
+) {
+	if (roundQty(qty) === line.remaining) {
+		return { amount: line.lineTotal - line.refundedAmount, tax: line.tax - line.refundedTax };
+	}
+	return { amount: Math.round((line.lineTotal * qty) / line.sold), tax: Math.round((line.tax * qty) / line.sold) };
 }
